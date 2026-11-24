@@ -1247,5 +1247,29 @@ if(t==="none")delete s.bonPay;else s.bonPay=t==="txt"?{t:"txt",v:txt.value.trim(
 try{write("madaSales",sales)}catch(_){}ov.remove();run(id)}};
 })();
 </script>
+<script>
+/* ===== Bon / Reçu : imprimer ou envoyer par WhatsApp / e-mail / partage ===== */
+(function(){
+const _print=window.printHtml;let curId=null;
+["printBon","printReceipt"].forEach(n=>{const f=window[n];window[n]=function(id){curId=id;return f.apply(this,arguments)}});
+function toText(body){const d=document.createElement("div");d.style.cssText="position:fixed;left:-9999px;top:0;width:600px";d.innerHTML=body;document.body.appendChild(d);try{d.querySelectorAll(".sig").forEach(x=>x.remove());d.querySelectorAll("tr").forEach(tr=>{const c=[...tr.children].map(x=>x.textContent.trim()).join(" • ");const r=document.createElement("div");r.textContent=c;tr.replaceWith(r)});d.querySelectorAll("table").forEach(t=>{const w=document.createElement("div");w.append(...t.childNodes);t.replaceWith(w)});d.querySelectorAll("span").forEach(sp=>sp.after(" "));return d.innerText.replace(/[ \t\u00a0\u202f]+/g," ").replace(/ ?\n ?/g,"\n").replace(/\n{3,}/g,"\n\n").trim()}finally{d.remove()}}
+window.printHtml=function(title,body){
+const s=sales.find(x=>String(x.id)===String(curId)),cl=s&&clients.find(c=>String(c.id)===String(s.clientId));
+if(!s||typeof isAdmin!=="function"||isLivreur()){return _print(title,body)}
+const old=document.getElementById("docOutModal");if(old)old.remove();
+const ph=String(s.clientPhone||(cl&&cl.phone)||"").trim(),digits=ph?formatMgPhone(ph).replace(/\D/g,""):"",mail=s.clientEmail||(cl&&cl.email)||"";
+const text=toText(body)+"\n\nMerci !";
+const ov=document.createElement("div");ov.id="docOutModal";ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:340;display:grid;place-items:center;padding:16px";
+ov.innerHTML='<div style="background:#fff;color:#1d2923;border-radius:16px;padding:18px;width:min(100%,360px);box-shadow:0 10px 40px #0005"><h3 style="margin:0 0 4px">'+esc(title)+'</h3><p style="margin:0 0 10px;font-size:13px;color:#718078">'+esc(s.clientName||"")+(ph?" • "+esc(formatMgPhone(ph)):"")+'</p><div style="display:grid;gap:8px"></div><button id="doNo" style="width:100%;margin-top:10px;background:#e5ece7;color:#1d2923">Fermer</button></div>';
+document.body.appendChild(ov);const box=ov.querySelector("div div:nth-of-type(1)");
+const add=(l,fn)=>{const b=document.createElement("button");b.type="button";b.textContent=l;b.style.cssText="width:100%;padding:12px;font-size:15px;font-weight:700;border-radius:12px;border:2px solid #087b50;background:#fff;color:#087b50";b.onclick=fn;box.appendChild(b)};
+add("🖨 Imprimer / PDF",()=>{ov.remove();_print(title,body)});
+add("💬 WhatsApp"+(digits?"":" (choisir le contact)"),()=>{window.open("https://wa.me/"+digits+"?text="+encodeURIComponent(text),"_blank");ov.remove()});
+add("✉ E-mail"+(mail?"":" (saisir l'adresse)"),()=>{window.open("mailto:"+encodeURIComponent(mail).replace(/%40/g,"@")+"?subject="+encodeURIComponent(title+" - "+(settings.shopName||"MADA SHOP"))+"&body="+encodeURIComponent(text),"_blank");ov.remove()});
+if(navigator.share)add("📤 Partager",()=>{navigator.share({title:title,text:text}).catch(()=>{});ov.remove()});
+add("📋 Copier le texte",()=>{const ok=()=>notify("Texte copié");if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(ok).catch(()=>prompt("Copiez :",text));else prompt("Copiez :",text);ov.remove()});
+ov.querySelector("#doNo").onclick=()=>ov.remove();ov.addEventListener("click",e=>{if(e.target===ov)ov.remove()})};
+})();
+</script>
 </body>
 </html>
