@@ -1301,6 +1301,7 @@ const add=(l,fn,main)=>{const b=document.createElement("button");b.type="button"
 const dl=()=>{const u=URL.createObjectURL(file),a=document.createElement("a");a.href=u;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)};
 if(file){const can=!!(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]}));
 add("📎 Envoyer en PDF (WhatsApp, Mail…)",()=>{if(can){navigator.share({files:[file],title:fname}).catch(()=>{});ov.remove()}else{dl();ov.querySelector("#doHint").textContent="Partage direct indisponible ici : le PDF est téléchargé, joignez-le depuis WhatsApp ou votre mail."}},true);
+add("💬 WhatsApp du client + PDF",()=>{const m="Bonjour "+(s.clientName||"")+", veuillez trouver ci-joint votre "+String(title).toLowerCase()+" ("+(settings.shopName||"MADA SHOP")+"). Merci !";window.open("https://wa.me/"+digits+"?text="+encodeURIComponent(m),"_blank");dl();ov.querySelector("#doHint").textContent="Le chat du client s'ouvre et le PDF est enregistré : dans WhatsApp, touchez 📎 > Document, puis choisissez "+fname+"."})
 add("⬇ Télécharger le PDF",()=>{dl()})}
 add("🖨 Imprimer",()=>{ov.remove();_print(title,body)});
 add("💬 WhatsApp (texte)"+(digits?"":" – choisir le contact"),()=>{window.open("https://wa.me/"+digits+"?text="+encodeURIComponent(text),"_blank");ov.remove()});
