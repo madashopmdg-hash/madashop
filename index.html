@@ -1228,5 +1228,24 @@ window.renderDeliveries=function(){const x=_r.apply(this,arguments);try{if(!curr
 document.addEventListener("click",function(){try{if(!currentUser||isLivreur()||!window.Notification||Notification.permission!=="default")return;Notification.requestPermission().catch(function(){})}catch(_){}});
 })();
 </script>
+<script>
+/* ===== Bon : choix de la date / condition de paiement avant impression ===== */
+(function(){
+const _bon=window.printBon;
+function payTxt(s){const p=s.bonPay;if(!p)return"";const liv=s.delivery==="Livraison";if(p.t==="liv")return liv?"À la livraison":"À la récupération";if(p.t==="cmd")return"100% à la commande";if(p.t==="txt")return p.v||"";return""}
+function run(id){const s=sales.find(x=>String(x.id)===String(id));const t=payTxt(s),_p=window.printHtml;if(t){window.printHtml=function(ti,b){window.printHtml=_p;return _p(ti,b.replace('<div class="sig">','<div class="big" style="font-size:14px">Date de paiement : '+esc(t)+'</div><div class="sig">'))}}try{_bon(id)}finally{window.printHtml=_p}}
+window.printBon=function(id){const s=sales.find(x=>String(x.id)===String(id));if(!s)return;const old=document.getElementById("bonPayModal");if(old)old.remove();const liv=s.delivery==="Livraison",cur=s.bonPay||{t:"liv"};
+const ov=document.createElement("div");ov.id="bonPayModal";ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:320;display:grid;place-items:center;padding:16px";
+ov.innerHTML='<div style="background:#fff;color:#1d2923;border-radius:16px;padding:18px;width:min(100%,360px);box-shadow:0 10px 40px #0005"><h3 style="margin:0 0 4px">🖨 Bon • Date de paiement</h3><p style="margin:0 0 10px;font-size:13px;color:#718078">'+esc(s.invoiceNo||"")+' • '+esc(s.clientName||"")+'</p><div id="bpOpts" style="display:grid;gap:8px"></div><input id="bpTxt" class="hidden" placeholder="Ex. 30/11/2026, fin du mois…" style="width:100%;margin-top:10px"><button id="bpOk" style="width:100%;margin-top:12px">Imprimer le bon</button><button id="bpNo" style="width:100%;margin-top:8px;background:#e5ece7;color:#1d2923">Annuler</button></div>';
+document.body.appendChild(ov);let t=cur.t;const txt=ov.querySelector("#bpTxt");if(cur.t==="txt")txt.value=cur.v||"";
+const opts=[["liv",liv?"À la livraison":"À la récupération"],["cmd","100% à la commande"],["txt","Saisie manuelle"],["none","Ne pas afficher"]];
+const paint=()=>{const box=ov.querySelector("#bpOpts");box.innerHTML="";opts.forEach(([k,l])=>{const b=document.createElement("button");b.type="button";const sel=k===t;b.textContent=(sel?"✓ ":"")+l;b.style.cssText="width:100%;padding:12px;font-size:15px;font-weight:700;border-radius:12px;border:2px solid #087b50;background:"+(sel?"#087b50":"#fff")+";color:"+(sel?"#fff":"#087b50");b.onclick=()=>{t=k;txt.classList.toggle("hidden",t!=="txt");paint();if(t==="txt")txt.focus()};box.appendChild(b)})};
+txt.classList.toggle("hidden",t!=="txt");paint();
+ov.querySelector("#bpNo").onclick=()=>ov.remove();ov.addEventListener("click",e=>{if(e.target===ov)ov.remove()});
+ov.querySelector("#bpOk").onclick=()=>{if(t==="txt"&&!txt.value.trim()){notify("Saisissez la date de paiement");return}
+if(t==="none")delete s.bonPay;else s.bonPay=t==="txt"?{t:"txt",v:txt.value.trim()}:{t:t};
+try{write("madaSales",sales)}catch(_){}ov.remove();run(id)}};
+})();
+</script>
 </body>
 </html>
